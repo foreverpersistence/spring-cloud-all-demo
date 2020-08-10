@@ -14,6 +14,8 @@
     <modules>
         <module>spring-config-client</module>
         <module>eureka-server</module>
+        <module>service-provider</module>
+        <module>service-client</module>
     </modules>
     <groupId>com.gupaoedu</groupId>
     <artifactId>spring-cloud-all</artifactId>
