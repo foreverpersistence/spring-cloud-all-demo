@@ -1,5 +1,6 @@
 package com.gupaoedu.service.provider;
 
+import com.gupaoedu.service.annotation.TimeOut;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Random;
+import java.util.concurrent.*;
 
 /**
  * @author fred
@@ -61,7 +63,7 @@ public class EchoSerivceController {
 
     private void await() {
         int wait = random.nextInt(100);
-        System.out.println("当前方法执行 消耗：" + wait + " ms");
+        System.out.printf("【当前线程： %s】当前方法执行 消耗：%d  ms", Thread.currentThread().getName(), wait);
         try {
             Thread.sleep(wait);
         } catch (InterruptedException e) {
@@ -69,5 +71,19 @@ public class EchoSerivceController {
         }
     }
 
+    private ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+    @TimeOut(50L)
+    @GetMapping("/hello")
+    public String hello() throws InterruptedException, ExecutionException, TimeoutException {
+        //模拟超时， 切换线程
+        Future<String> future = executorService.submit(this::doHello);
+        return future.get(50, TimeUnit.MILLISECONDS);
+    }
+
+    private String doHello() {
+        await();
+        return "hello";
+    }
 
 }
