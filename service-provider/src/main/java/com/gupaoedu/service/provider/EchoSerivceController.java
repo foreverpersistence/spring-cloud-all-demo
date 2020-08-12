@@ -35,7 +35,9 @@ public class EchoSerivceController {
         return environment.getProperty("local.server.port"); //依赖注入时 动态 注入
     }
 
-    @HystrixCommand(commandProperties = {
+    @HystrixCommand(
+            fallbackMethod = "fallback",
+            commandProperties = {
             // https://github.com/Netflix/Hystrix/wiki/Configuration#execution.isolation.strategy
             @HystrixProperty(name="execution.isolation.strategy", value="THREAD"),
             @HystrixProperty(name="execution.isolation.thread.timeoutInMilliseconds", value="50")
@@ -46,6 +48,14 @@ public class EchoSerivceController {
         return "[ECHO: "+ getPort() + " ] : " + message;
     }
 
+    /**
+     * 熔断 方法
+     * @param abc
+     * @return
+     */
+    public String fallback(String abc) {
+        return "FALLBACK-" + abc;
+    }
 
     private final Random random = new Random();
 
