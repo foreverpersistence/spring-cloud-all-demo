@@ -38,13 +38,15 @@ public class EchoSerivceController {
         return environment.getProperty("local.server.port"); //依赖注入时 动态 注入
     }
 
-    @HystrixCommand(
-            fallbackMethod = "fallback",
-            commandProperties = {
-            // https://github.com/Netflix/Hystrix/wiki/Configuration#execution.isolation.strategy
-            @HystrixProperty(name="execution.isolation.strategy", value="THREAD"),
-            @HystrixProperty(name="execution.isolation.thread.timeoutInMilliseconds", value="50")
-    })
+
+    @TimeOut(value = 50L, fallback = "fallback")
+//    @HystrixCommand(
+//            fallbackMethod = "fallback",
+//            commandProperties = {
+//            // https://github.com/Netflix/Hystrix/wiki/Configuration#execution.isolation.strategy
+//            @HystrixProperty(name="execution.isolation.strategy", value="THREAD"),
+//            @HystrixProperty(name="execution.isolation.thread.timeoutInMilliseconds", value="50")
+//    })
     @GetMapping("/echo/{message}")
     public String echo(@PathVariable String message) {
         await();

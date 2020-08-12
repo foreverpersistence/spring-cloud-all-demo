@@ -14,6 +14,7 @@ import org.springframework.web.method.HandlerMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -81,4 +82,94 @@ public class AopConfiguration {
         return semaphore;
     }
 
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+    /**
+     * Aop 实现 超时
+     * @param pjp
+     * @return
+     * @throws Throwable
+     */
+    @Around("@annotation(com.gupaoedu.service.annotation.TimeOut)")
+    public Object beforeTimeoutMehtodInvocation(ProceedingJoinPoint pjp) throws Throwable {
+
+        Object returnValue = null;
+        Signature signature = pjp.getSignature();
+        if (signature instanceof MethodSignature) {
+            MethodSignature methodSignature = (MethodSignature) signature;
+            Method method = methodSignature.getMethod();
+            Object[] args = pjp.getArgs();
+            //3 通过 Method 获取 注解
+            TimeOut timeOut = method.getAnnotation(TimeOut.class);
+            if (timeOut != null) {
+                //4 获取 注解 的属性
+                long value = timeOut.value();
+                TimeUnit timeUnit = timeOut.timeUnit();
+                String fallback = timeOut.fallback();
+
+                //5 构造 Future 超时时间
+                Future<Object> future = executorService.submit(new Callable<Object>() {
+
+                    @Override
+                    public Object call() throws Exception {
+                        try {
+                            return pjp.proceed();
+                        } catch (Throwable throwable) {
+                            throw new RuntimeException();
+                        }
+                    }
+                });
+
+                try {
+                    //6 执行 调用方法
+                    returnValue = future.get(value, timeUnit);
+                } catch (TimeoutException e) {
+                    //7 失败，fallback
+                    returnValue = invokeFallbackMethod(method, pjp.getTarget(), fallback, args);
+                }
+            }
+        }
+        return returnValue;
+    }
+
+
+    /**
+     *
+     * @param method
+     * @param bean
+     * @param fallback
+     * @param args 参数 透传
+     * @return
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+        private Object invokeFallbackMethod (Method method, Object bean, String fallback, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+            //7。1 查找  fallback 方法
+            Method fallbackMethod = findFallbackMethod(method, bean, fallback);
+
+            return fallbackMethod.invoke(bean, args);
+
+        }
+
+
+        /**
+         * 查找对应的 fallback method
+         * @param method
+         * @param bean
+         * @param fallback
+         * @return
+         * @throws NoSuchMethodException
+         */
+        private Method findFallbackMethod(Method method, Object bean, String fallback) throws NoSuchMethodException {
+
+
+            Class<?> beanClass = bean.getClass();
+
+            Method fallbackMethod = beanClass.getMethod(fallback, method.getParameterTypes());
+            return fallbackMethod;
+
+        }
 }
