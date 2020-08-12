@@ -1,5 +1,6 @@
 package com.gupaoedu.service.provider;
 
+import com.gupaoedu.service.annotation.Limited;
 import com.gupaoedu.service.annotation.TimeOut;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
@@ -71,19 +72,33 @@ public class EchoSerivceController {
         }
     }
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(2);
+//    private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-    @TimeOut(50L)
+    @TimeOut(value = 50L, fallback = "fallbackHello")
     @GetMapping("/hello")
     public String hello() throws InterruptedException, ExecutionException, TimeoutException {
         //模拟超时， 切换线程
-        Future<String> future = executorService.submit(this::doHello);
-        return future.get(50, TimeUnit.MILLISECONDS);
+//        Future<String> future = executorService.submit(this::doHello);
+//        return future.get(50, TimeUnit.MILLISECONDS);
+        return doHello();
     }
 
     private String doHello() {
         await();
         return "hello";
+    }
+
+    //参数类型 一致
+    public String fallbackHello() {
+        return "fallbackHello-";
+    }
+
+
+    @Limited(10)  //限流
+    @GetMapping("/world")
+    public String world() {
+        await();
+        return "world";
     }
 
 }
