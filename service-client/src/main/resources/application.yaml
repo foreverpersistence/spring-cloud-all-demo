@@ -9,6 +9,14 @@ spring:
 #        enabled: false # Consul 服务发现与注册失效（默认）
 #  默认情况关闭在profile中开启
 
+# kafka 配置
+  kafka:
+    producer:
+      value-serializer: com.gupaoedu.client.kafka.ObjectSerializer
+    consumer:
+      group-id: gupao-group
+      value-deserializer: com.gupaoedu.client.kafka.ObjectDeserializer
+
 server:
   port: 9090 #随机端口
 
@@ -50,3 +58,5 @@ spring:
 #        enabled: true
 #        ipAddress: 127.0.0.1
 #        port: 8500
+
+

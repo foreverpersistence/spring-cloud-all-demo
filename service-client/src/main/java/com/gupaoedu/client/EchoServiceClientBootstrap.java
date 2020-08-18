@@ -1,11 +1,14 @@
 package com.gupaoedu.client;
 
+import com.gupaoedu.client.domain.Person;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +27,25 @@ public class EchoServiceClientBootstrap {
 
     @Autowired
     private EchoServiceClient echoServiceClient;
+    @Autowired
+    private KafkaTemplate<String,Object> kafkaTemplate;
+
+    @GetMapping("/person")
+    public Person person(String name) {
+        Person person = new Person();
+        person.setId(System.currentTimeMillis());
+        person.setName(name);
+
+        kafkaTemplate.send("gupao", person);
+        return person;
+    }
+
+    @KafkaListener(topics = "gupao", groupId = "gupao-group")
+    public void listner(Person person) {
+        System.out.println(person);
+    }
+
+
 
     @GetMapping(value = "/call/echo/{message}")
     public String echo(@PathVariable String message) {
