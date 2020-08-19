@@ -4,7 +4,17 @@ spring:
   cloud:
     zookeeper:
       enabled: false # Zookeeper 服务发现与注册失效（默认）
-#    consul:
+
+    stream:
+      bindings:
+        person-sink: # channel
+          destination: gupao  # topic
+          group: gupao-group
+        person-source:
+          destination: gupao
+
+
+  #    consul:
 #      discovery:
 #        enabled: false # Consul 服务发现与注册失效（默认）
 #  默认情况关闭在profile中开启
@@ -16,6 +26,9 @@ spring:
     consumer:
       group-id: gupao-group
       value-deserializer: com.gupaoedu.client.kafka.ObjectDeserializer
+
+
+
 
 server:
   port: 9090 #随机端口
